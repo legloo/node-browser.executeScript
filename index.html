@@ -1,0 +1,59 @@
+
+import { InAppBrowser } from '@ionic-native/in-app-browser';
+import { SafariViewController } from '@ionic-native/safari-view-controller';
+
+public iab: InAppBrowser,
+public svc: SafariViewController,
+
+async functionname(data: any) {
+//loading....
+    try {
+      let url = 'url before' + data._id;
+      let browser = this.iab.create(url, '_blank', {
+        hidden: 'yes'
+      });
+      browser.on('loadstop').subscribe(e => {
+        if (e.url === url) {
+          browser.executeScript({
+            code: `
+            $('input[name=CDMA]').val(${data.mobile});
+            //u can write any codes and they must could be run in real browser-console
+            `
+          });
+        }
+      });
+      browser.on('loadstart').subscribe(e => {
+        this.loading.dismiss();
+        if (e.url.startsWith('url later')) {
+          // browser.close();
+          this.svcAl(e.url);
+        }
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async svcAl(_url) {
+    try {
+      let url = _url.replace(/\|/g, '%7C');
+      let available = await this.svc.isAvailable();
+      if (available) {
+        let result = await this.svc.show({
+          url: url,
+          hidden: false,
+          animated: true,
+          tintColor: '#ff0000'
+        });
+
+        if (result.event === 'opened') console.log('Opened');
+        else if (result.event === 'loaded') console.log('Loaded');
+        else if (result.event === 'closed') console.log('Closed');
+
+      } else {
+        this.iab.create(url, '_system');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
